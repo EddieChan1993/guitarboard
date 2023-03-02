@@ -1,7 +1,6 @@
 package game
 
 import (
-	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
@@ -67,7 +66,6 @@ func (g *Game) ShowWord() {
 			continue
 		}
 		words.Show()
-		fmt.Println(words.X, words.Y)
 	}
 }
 
