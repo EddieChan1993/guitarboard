@@ -8,12 +8,12 @@ var width = float64(20)
 
 //WordKeys 所有音名
 var WordKeys = []string{
-	"C", "bC", "D", "bD", "E", "F", "bF", "G", "bG", "A", "bA", "B",
+	"C", "#C", "D", "#D", "E", "F", "#F", "G", "#G", "A", "#A", "B",
 }
 
 //DefHideWordKeys 默认隐藏音名
 var DefHideWordKeys = map[string]struct{}{
-	"bC": {}, "bD": {}, "bF": {}, "bG": {}, "bA": {},
+	"#C": {}, "#D": {}, "#F": {}, "#G": {}, "#A": {},
 }
 
 type Words struct {
