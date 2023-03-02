@@ -16,7 +16,7 @@ const dpi = 72
 
 type Game struct {
 	AllWords map[WordPkId]*Words
-	font     *opentype.Font
+	font     font.Face
 }
 
 func (g *Game) Update() error {
@@ -47,12 +47,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 //DrawDesc 描述文字
 func (g *Game) DrawDesc(dst *ebiten.Image) {
-	mplusNormalFont, _ := opentype.NewFace(g.font, &opentype.FaceOptions{
-		Size:    24,
-		DPI:     dpi,
-		Hinting: font.HintingVertical,
-	})
-	text.Draw(dst, "S Show/C Hide", mplusNormalFont, 1300, 400, color.White)
+	text.Draw(dst, "S Show/C Hide", g.font, 1300, 400, color.White)
 }
 
 //DrawCircleFloor 画底板圆
@@ -73,16 +68,11 @@ func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 
 //DrawWord 画音名
 func (g *Game) DrawWord(dst *ebiten.Image) {
-	mplusNormalFont, _ := opentype.NewFace(g.font, &opentype.FaceOptions{
-		Size:    24,
-		DPI:     dpi,
-		Hinting: font.HintingVertical,
-	})
 	for _, words := range g.AllWords {
 		if !words.IsShow {
 			continue
 		}
-		text.Draw(dst, words.key, mplusNormalFont, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
+		text.Draw(dst, words.key, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
 	}
 }
 
@@ -113,9 +103,14 @@ func (g *Game) HideAll() {
 
 func NewGame() *Game {
 	tt, _ := opentype.Parse(fonts.PressStart2P_ttf)
+	mplusNormalFont, _ := opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    24,
+		DPI:     dpi,
+		Hinting: font.HintingVertical,
+	})
 	res := &Game{
 		AllWords: make(map[WordPkId]*Words),
-		font:     tt,
+		font:     mplusNormalFont,
 	}
 	xCd := 85
 	yCd := 50
