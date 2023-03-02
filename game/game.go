@@ -14,20 +14,31 @@ import (
 
 const dpi = 72
 
+type Mode = uint8
+
+const (
+	ModeWordKey Mode = 1 //音名模式
+	ModeWordNum Mode = 2 //基数模式
+)
+
 type Game struct {
 	AllWords map[WordPkId]*Words
 	font     font.Face
+	mode     Mode
 }
 
 func (g *Game) Update() error {
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		g.ShowWord()
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyH) {
 		g.HideAll()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyS) {
 		g.ShowAll()
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
+		g.ChangeMode()
 	}
 	return nil
 }
@@ -47,7 +58,8 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 //DrawDesc 描述文字
 func (g *Game) DrawDesc(dst *ebiten.Image) {
-	text.Draw(dst, "S Show/C Hide", g.font, 1300, 400, color.White)
+	text.Draw(dst, "C Change Mode", g.font, 100, 400, color.White)
+	text.Draw(dst, "S Show/H Hide", g.font, 1300, 400, color.White)
 }
 
 //DrawCircleFloor 画底板圆
@@ -72,7 +84,13 @@ func (g *Game) DrawWord(dst *ebiten.Image) {
 		if !words.IsShow {
 			continue
 		}
-		text.Draw(dst, words.key, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
+		if g.mode == ModeWordKey {
+			text.Draw(dst, words.key, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
+		}
+		if g.mode == ModeWordNum {
+			num := WordNumKeys[words.key]
+			text.Draw(dst, num, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
+		}
 	}
 }
 
@@ -101,6 +119,15 @@ func (g *Game) HideAll() {
 	}
 }
 
+//ChangeMode 模式切换
+func (g *Game) ChangeMode() {
+	if g.mode == ModeWordKey {
+		g.mode = ModeWordNum
+	} else {
+		g.mode = ModeWordKey
+	}
+}
+
 func NewGame() *Game {
 	tt, _ := opentype.Parse(fonts.PressStart2P_ttf)
 	mplusNormalFont, _ := opentype.NewFace(tt, &opentype.FaceOptions{
@@ -111,6 +138,7 @@ func NewGame() *Game {
 	res := &Game{
 		AllWords: make(map[WordPkId]*Words),
 		font:     mplusNormalFont,
+		mode:     ModeWordKey,
 	}
 	xCd := 85
 	yCd := 50
