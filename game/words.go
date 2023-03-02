@@ -4,22 +4,22 @@ import "fmt"
 
 type WordPkId = string
 
-var width = float64(27)
+var width = float64(20)
 
 //WordKeys 所有音名
 var WordKeys = []string{
 	"C", "bC", "D", "bD", "E", "F", "bF", "G", "bG", "A", "bA", "B",
 }
 
-//defShowWordKeys 默认显示音名
-var defShowWordKeys = map[string]struct{}{
+//DefHideWordKeys 默认隐藏音名
+var DefHideWordKeys = map[string]struct{}{
 	"bC": {}, "bD": {}, "bF": {}, "bG": {}, "bA": {},
 }
 
 type Words struct {
 	X, Y   float64
 	key    string
-	IsShow bool //开启遮罩
+	IsShow bool //音名显示
 }
 
 func InitWords(x, y float64, key string) *Words {
@@ -42,30 +42,30 @@ func (this_ *Words) Trigger() {
 
 //Hide 隐藏字母
 func (this_ *Words) Hide() {
-	if _, had := defShowWordKeys[this_.key]; had {
-		this_.IsShow = false
-		return
-	}
-	this_.IsShow = true
-}
-
-//Hide 显示字母
-func (this_ *Words) Show() {
-	if _, had := defShowWordKeys[this_.key]; had {
+	if _, had := DefHideWordKeys[this_.key]; had {
 		this_.IsShow = false
 		return
 	}
 	this_.IsShow = false
 }
 
+//Hide 显示字母
+func (this_ *Words) Show() {
+	if _, had := DefHideWordKeys[this_.key]; had {
+		this_.IsShow = false
+		return
+	}
+	this_.IsShow = true
+}
+
 func (this_ *Words) In(currentX, currentY float64) bool {
 	wordX := this_.X + width
 	wordY := this_.Y + width
 
-	if !(currentX >= this_.X && currentX <= wordX) {
+	if !(currentX >= this_.X-width && currentX <= wordX) {
 		return false
 	}
-	if !(currentY >= this_.Y && currentY <= wordY) {
+	if !(currentY >= this_.Y-width && currentY <= wordY) {
 		return false
 	}
 	return true

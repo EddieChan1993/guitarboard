@@ -12,12 +12,15 @@ import (
 	"image/color"
 )
 
+const dpi = 72
+
 type Game struct {
 	AllWords map[WordPkId]*Words
+	font     *opentype.Font
 }
 
 func (g *Game) Update() error {
-	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		g.ShowWord()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
@@ -31,31 +34,56 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(81, 0)
+	op.GeoM.Translate(150, 30)
 	screen.DrawImage(img.EbitenGuitarBoardImg, op)
+	g.DrawCircleFloor(screen)
+	g.DrawDesc(screen)
+	g.DrawWord(screen)
+}
+
+func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	return 1662, 400
+}
+
+//DrawDesc 描述文字
+func (g *Game) DrawDesc(dst *ebiten.Image) {
+	mplusNormalFont, _ := opentype.NewFace(g.font, &opentype.FaceOptions{
+		Size:    24,
+		DPI:     dpi,
+		Hinting: font.HintingVertical,
+	})
+	text.Draw(dst, "S Show/C Hide", mplusNormalFont, 1300, 400, color.White)
+}
+
+//DrawCircleFloor 画底板圆
+func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 	for _, words := range g.AllWords {
-		if !words.IsShow {
+		if _, had := DefHideWordKeys[words.key]; had {
+			//默认隐藏的音名没有底板
 			continue
 		}
-		ebitenutil.DrawRect(screen, words.X, words.Y, width+3, width, color.RGBA{
+		ebitenutil.DrawCircle(dst, words.X, words.Y, width, color.RGBA{
 			R: 236,
 			G: 237,
 			B: 237,
 			A: 255,
 		})
 	}
-	tt, _ := opentype.Parse(fonts.PressStart2P_ttf)
-	const dpi = 72
-	mplusNormalFont, _ := opentype.NewFace(tt, &opentype.FaceOptions{
+}
+
+//DrawWord 画音名
+func (g *Game) DrawWord(dst *ebiten.Image) {
+	mplusNormalFont, _ := opentype.NewFace(g.font, &opentype.FaceOptions{
 		Size:    24,
 		DPI:     dpi,
 		Hinting: font.HintingVertical,
 	})
-	text.Draw(screen, "S Show/C Hide", mplusNormalFont, 1300, 400, color.White)
-}
-
-func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 1662, 400
+	for _, words := range g.AllWords {
+		if !words.IsShow {
+			continue
+		}
+		text.Draw(dst, words.key, mplusNormalFont, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
+	}
 }
 
 //ShowWord 显示某一个
@@ -84,13 +112,15 @@ func (g *Game) HideAll() {
 }
 
 func NewGame() *Game {
+	tt, _ := opentype.Parse(fonts.PressStart2P_ttf)
 	res := &Game{
 		AllWords: make(map[WordPkId]*Words),
+		font:     tt,
 	}
-	xCd := 90
-	yCd := 60
-	baseX := 180
-	baseY := 10
+	xCd := 85
+	yCd := 50
+	baseX := 220
+	baseY := 35
 	keyIndex := 0
 	var x, y float64
 	for i := 0; i < 15*6; i++ {
@@ -98,27 +128,27 @@ func NewGame() *Game {
 		switch line {
 		case 0:
 			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 5)
+			y = float64(i/15*yCd + baseY + 3)
 			keyIndex = (i%15 + 5) % 12
 		case 1:
 			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY)
+			y = float64(i/15*yCd + baseY + 5)
 			keyIndex = (i % 15) % 12
 		case 2:
 			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY - 2)
+			y = float64(i/15*yCd + baseY + 10)
 			keyIndex = (i%15 + 8) % 12
 		case 3:
 			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY - 4)
+			y = float64(i/15*yCd + baseY + 13)
 			keyIndex = (i%15 + 3) % 12
 		case 4:
 			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY - 9)
+			y = float64(i/15*yCd + baseY + 15)
 			keyIndex = (i%15 + 10) % 12
 		case 5:
 			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY - 12)
+			y = float64(i/15*yCd + baseY + 20)
 			keyIndex = (i%15 + 5) % 12
 		}
 		insWord := InitWords(x, y, WordKeys[keyIndex])
