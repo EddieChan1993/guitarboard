@@ -58,7 +58,12 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 //DrawDesc 描述文字
 func (g *Game) DrawDesc(dst *ebiten.Image) {
-	text.Draw(dst, "C Change Mode", g.font, 100, 400, color.White)
+	if g.mode == ModeWordKey {
+		text.Draw(dst, "C Change Mode-Word", g.font, 100, 400, color.White)
+	}
+	if g.mode == ModeWordNum {
+		text.Draw(dst, "C Change Mode-Number", g.font, 100, 400, color.White)
+	}
 	text.Draw(dst, "S Show/H Hide", g.font, 1300, 400, color.White)
 }
 
@@ -140,14 +145,14 @@ func NewGame() *Game {
 		font:     mplusNormalFont,
 		mode:     ModeWordKey,
 	}
-	xCd := 85
-	yCd := 50
-	baseX := 220
-	baseY := 35
-	keyIndex := 0
+	xCd := 85     //间隔
+	yCd := 50     //间隔
+	baseX := 220  //坐标（0，0）距离
+	baseY := 35   //坐标（0，0）距离
+	keyIndex := 0 //取key的索引
 	var x, y float64
 	for i := 0; i < 15*6; i++ {
-		line := i / 15
+		line := i / 15 //第几行
 		switch line {
 		case 0:
 			x = float64(i%15*xCd + baseX)
