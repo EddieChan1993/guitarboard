@@ -160,28 +160,27 @@ func NewGame() *Game {
 			keyIndex = (i%15 + 5) % 12
 		case 1:
 			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 5)
+			y = float64(i/15*yCd + baseY + 2)
 			keyIndex = (i % 15) % 12
 		case 2:
 			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 10)
+			y = float64(i/15*yCd + baseY + 5)
 			keyIndex = (i%15 + 8) % 12
 		case 3:
 			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 13)
+			y = float64(i/15*yCd + baseY + 9)
 			keyIndex = (i%15 + 3) % 12
 		case 4:
 			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 15)
+			y = float64(i/15*yCd + baseY + 12)
 			keyIndex = (i%15 + 10) % 12
 		case 5:
 			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 20)
+			y = float64(i/15*yCd + baseY + 18)
 			keyIndex = (i%15 + 5) % 12
 		}
 		insWord := InitWords(x, y, WordKeys[keyIndex])
 		res.AllWords[insWord.PkId()] = insWord
-
 	}
 	return res
 }
