@@ -70,10 +70,6 @@ func (g *Game) DrawDesc(dst *ebiten.Image) {
 //DrawCircleFloor 画底板圆
 func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 	for _, words := range g.AllWords {
-		if _, had := DefHideWordKeys[words.key]; had {
-			//默认隐藏的音名没有底板
-			continue
-		}
 		ebitenutil.DrawCircle(dst, words.X, words.Y, width, color.RGBA{
 			R: 236,
 			G: 237,
@@ -133,18 +129,7 @@ func (g *Game) ChangeMode() {
 	}
 }
 
-func NewGame() *Game {
-	tt, _ := opentype.Parse(fonts.PressStart2P_ttf)
-	mplusNormalFont, _ := opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    24,
-		DPI:     dpi,
-		Hinting: font.HintingVertical,
-	})
-	res := &Game{
-		AllWords: make(map[WordPkId]*Words),
-		font:     mplusNormalFont,
-		mode:     ModeWordKey,
-	}
+func (g *Game) initXYPos() {
 	xCd := 85     //间隔
 	yCd := 50     //间隔
 	baseX := 220  //坐标（0，0）距离
@@ -179,8 +164,30 @@ func NewGame() *Game {
 			y = float64(i/15*yCd + baseY + 18)
 			keyIndex = (i%15 + 5) % 12
 		}
+		if _, had := DefHideWordKeys[WordKeys[keyIndex]]; had {
+			continue
+		}
 		insWord := InitWords(x, y, WordKeys[keyIndex])
-		res.AllWords[insWord.PkId()] = insWord
+		g.AllWords[insWord.PkId()] = insWord
 	}
+}
+
+func (g *Game) initFont() {
+	tt, _ := opentype.Parse(fonts.PressStart2P_ttf)
+	mplusNormalFont, _ := opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    24,
+		DPI:     dpi,
+		Hinting: font.HintingVertical,
+	})
+	g.font = mplusNormalFont
+}
+
+func NewGame() *Game {
+	res := &Game{
+		AllWords: make(map[WordPkId]*Words),
+		mode:     ModeWordKey,
+	}
+	res.initXYPos()
+	res.initFont()
 	return res
 }

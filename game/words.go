@@ -47,19 +47,11 @@ func (this_ *Words) Trigger() {
 
 //Hide 隐藏字母
 func (this_ *Words) Hide() {
-	if _, had := DefHideWordKeys[this_.key]; had {
-		this_.IsShow = false
-		return
-	}
 	this_.IsShow = false
 }
 
 //Hide 显示字母
 func (this_ *Words) Show() {
-	if _, had := DefHideWordKeys[this_.key]; had {
-		this_.IsShow = false
-		return
-	}
 	this_.IsShow = true
 }
 
