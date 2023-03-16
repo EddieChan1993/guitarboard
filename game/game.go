@@ -14,12 +14,12 @@ import (
 
 const dpi = 72
 
-type Mode = uint8     //模式规则
-type WordShow = uint8 //音名显示类型
+type Mode = uint8      //模式规则
+type WordStyle = uint8 //音名显示类型
 
 const (
-	WordKey WordShow = 1 //音名
-	WordNum WordShow = 2 //唱名
+	WordKey WordStyle = 1 //音名
+	WordNum WordStyle = 2 //唱名
 )
 
 const (
@@ -28,11 +28,11 @@ const (
 )
 
 type Game struct {
-	AllWords  map[WordPkId]*Words
+	AllWords  map[WordPkId]*Words //所有音名信息
 	font      font.Face
-	mode      Mode
-	wordShow  WordShow
-	touchFret int
+	mode      Mode      //当前模式
+	wordStyle WordStyle //当前显示音名样式
+	touchFret int       //最近所点品格
 }
 
 func (g *Game) Update() error {
@@ -46,7 +46,7 @@ func (g *Game) Update() error {
 		g.ShowAll()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
-		g.ChangeWordShow()
+		g.ChangeWordStyle()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyV) {
 		g.ChangeMode()
@@ -69,16 +69,16 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 //DrawDesc 描述文字
 func (g *Game) DrawDesc(dst *ebiten.Image) {
-	if g.wordShow == WordKey {
-		text.Draw(dst, "C Change Word", g.font, 100, 400, color.White)
+	if g.wordStyle == WordKey {
+		text.Draw(dst, "C Style-Word", g.font, 100, 400, color.White)
 	}
-	if g.wordShow == WordNum {
-		text.Draw(dst, "C Change Number", g.font, 100, 400, color.White)
+	if g.wordStyle == WordNum {
+		text.Draw(dst, "C Style-Number", g.font, 100, 400, color.White)
 	}
 	if g.mode == ModeSuper {
-		text.Draw(dst, "V Change Mode-Super", g.font, 650, 400, color.White)
+		text.Draw(dst, "V Mode-Super", g.font, 700, 400, color.White)
 	} else {
-		text.Draw(dst, "V Change Mode-Normal", g.font, 650, 400, color.White)
+		text.Draw(dst, "V Mode-Normal", g.font, 700, 400, color.White)
 	}
 	text.Draw(dst, "S Show/H Hide", g.font, 1300, 400, color.White)
 }
@@ -101,10 +101,10 @@ func (g *Game) DrawWord(dst *ebiten.Image) {
 		if !words.IsShow {
 			continue
 		}
-		if g.wordShow == WordKey {
+		if g.wordStyle == WordKey {
 			text.Draw(dst, words.key, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
 		}
-		if g.wordShow == WordNum {
+		if g.wordStyle == WordNum {
 			num := WordNumKeys[words.key]
 			text.Draw(dst, num, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
 		}
@@ -143,12 +143,12 @@ func (g *Game) HideAll() {
 	}
 }
 
-//ChangeWordShow 显示切换
-func (g *Game) ChangeWordShow() {
-	if g.wordShow == WordKey {
-		g.wordShow = WordNum
+//ChangeWordStyle 显示切换
+func (g *Game) ChangeWordStyle() {
+	if g.wordStyle == WordKey {
+		g.wordStyle = WordNum
 	} else {
-		g.wordShow = WordKey
+		g.wordStyle = WordKey
 	}
 }
 
@@ -218,9 +218,9 @@ func (g *Game) initFont() {
 
 func NewGame() *Game {
 	res := &Game{
-		AllWords: make(map[WordPkId]*Words),
-		mode:     ModeSuper,
-		wordShow: WordNum,
+		AllWords:  make(map[WordPkId]*Words),
+		mode:      ModeSuper,
+		wordStyle: WordNum,
 	}
 	res.initXYPos()
 	res.initFont()
