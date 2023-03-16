@@ -14,22 +14,30 @@ import (
 
 const dpi = 72
 
-type Mode = uint8
+type Mode = uint8     //模式规则
+type WordShow = uint8 //音名显示类型
 
 const (
-	ModeWordKey Mode = 1 //音名模式
-	ModeWordNum Mode = 2 //基数模式
+	WordKey WordShow = 1 //音名
+	WordNum WordShow = 2 //唱名
+)
+
+const (
+	ModeSuper  Mode = 1 //超级模式,只会显示相同品格的音名
+	ModeNormal Mode = 2 //普通模式
 )
 
 type Game struct {
-	AllWords map[WordPkId]*Words
-	font     font.Face
-	mode     Mode
+	AllWords  map[WordPkId]*Words
+	font      font.Face
+	mode      Mode
+	wordShow  WordShow
+	touchFret int
 }
 
 func (g *Game) Update() error {
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		g.ShowWord()
+		g.touchEventThink()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyH) {
 		g.HideAll()
@@ -38,6 +46,9 @@ func (g *Game) Update() error {
 		g.ShowAll()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
+		g.ChangeWordShow()
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyV) {
 		g.ChangeMode()
 	}
 	return nil
@@ -58,11 +69,16 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 //DrawDesc 描述文字
 func (g *Game) DrawDesc(dst *ebiten.Image) {
-	if g.mode == ModeWordKey {
-		text.Draw(dst, "C Change Mode-Word", g.font, 100, 400, color.White)
+	if g.wordShow == WordKey {
+		text.Draw(dst, "C Change Word", g.font, 100, 400, color.White)
 	}
-	if g.mode == ModeWordNum {
-		text.Draw(dst, "C Change Mode-Number", g.font, 100, 400, color.White)
+	if g.wordShow == WordNum {
+		text.Draw(dst, "C Change Number", g.font, 100, 400, color.White)
+	}
+	if g.mode == ModeSuper {
+		text.Draw(dst, "V Change Mode-Super", g.font, 650, 400, color.White)
+	} else {
+		text.Draw(dst, "V Change Mode-Normal", g.font, 650, 400, color.White)
 	}
 	text.Draw(dst, "S Show/H Hide", g.font, 1300, 400, color.White)
 }
@@ -85,24 +101,31 @@ func (g *Game) DrawWord(dst *ebiten.Image) {
 		if !words.IsShow {
 			continue
 		}
-		if g.mode == ModeWordKey {
+		if g.wordShow == WordKey {
 			text.Draw(dst, words.key, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
 		}
-		if g.mode == ModeWordNum {
+		if g.wordShow == WordNum {
 			num := WordNumKeys[words.key]
 			text.Draw(dst, num, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
 		}
 	}
 }
 
-//ShowWord 显示某一个
-func (g *Game) ShowWord() {
+//touchEventThink 点击事件
+func (g *Game) touchEventThink() {
 	cX, cY := ebiten.CursorPosition()
 	for _, words := range g.AllWords {
 		if !words.In(float64(cX), float64(cY)) {
 			continue
 		}
+		if g.mode == ModeSuper {
+			//超级模式
+			if g.touchFret != words.Fret {
+				g.HideAll()
+			}
+		}
 		words.Show()
+		g.touchFret = words.Fret
 	}
 }
 
@@ -120,15 +143,24 @@ func (g *Game) HideAll() {
 	}
 }
 
-//ChangeMode 模式切换
-func (g *Game) ChangeMode() {
-	if g.mode == ModeWordKey {
-		g.mode = ModeWordNum
+//ChangeWordShow 显示切换
+func (g *Game) ChangeWordShow() {
+	if g.wordShow == WordKey {
+		g.wordShow = WordNum
 	} else {
-		g.mode = ModeWordKey
+		g.wordShow = WordKey
 	}
 }
 
+func (g *Game) ChangeMode() {
+	if g.mode == ModeSuper {
+		g.mode = ModeNormal
+	} else {
+		g.mode = ModeSuper
+	}
+}
+
+//initXYPos 音名坐标初始化
 func (g *Game) initXYPos() {
 	xCd := 85     //间隔
 	yCd := 50     //间隔
@@ -137,7 +169,8 @@ func (g *Game) initXYPos() {
 	keyIndex := 0 //取key的索引
 	var x, y float64
 	for i := 0; i < 15*6; i++ {
-		line := i / 15 //第几行
+		line := i / 15   //第几行
+		fret := i%15 + 1 //品格
 		switch line {
 		case 0:
 			x = float64(i%15*xCd + baseX)
@@ -167,11 +200,12 @@ func (g *Game) initXYPos() {
 		if _, had := DefHideWordKeys[WordKeys[keyIndex]]; had {
 			continue
 		}
-		insWord := InitWords(x, y, WordKeys[keyIndex])
+		insWord := InitWords(x, y, WordKeys[keyIndex], fret)
 		g.AllWords[insWord.PkId()] = insWord
 	}
 }
 
+//initFont 字体初始化
 func (g *Game) initFont() {
 	tt, _ := opentype.Parse(fonts.PressStart2P_ttf)
 	mplusNormalFont, _ := opentype.NewFace(tt, &opentype.FaceOptions{
@@ -185,7 +219,8 @@ func (g *Game) initFont() {
 func NewGame() *Game {
 	res := &Game{
 		AllWords: make(map[WordPkId]*Words),
-		mode:     ModeWordKey,
+		mode:     ModeSuper,
+		wordShow: WordNum,
 	}
 	res.initXYPos()
 	res.initFont()

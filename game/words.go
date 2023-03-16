@@ -24,14 +24,16 @@ var DefHideWordKeys = map[string]struct{}{
 type Words struct {
 	X, Y   float64
 	key    string
+	Fret   int  //品
 	IsShow bool //音名显示
 }
 
-func InitWords(x, y float64, key string) *Words {
+func InitWords(x, y float64, key string, fret int) *Words {
 	works := &Words{
-		X:   x,
-		Y:   y,
-		key: key,
+		X:    x,
+		Y:    y,
+		key:  key,
+		Fret: fret,
 	}
 	works.Hide()
 	return works
@@ -55,6 +57,7 @@ func (this_ *Words) Show() {
 	this_.IsShow = true
 }
 
+//In 是否点到了音名图标
 func (this_ *Words) In(currentX, currentY float64) bool {
 	wordX := this_.X + width
 	wordY := this_.Y + width
