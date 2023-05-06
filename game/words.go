@@ -8,17 +8,17 @@ var width = float64(20)
 
 //WordKeys 所有音名
 var WordKeys = []string{
-	"C", "#C", "D", "#D", "E", "F", "#F", "G", "#G", "A", "#A", "B",
+	"C", "bD", "D", "bE", "E", "F", "bG", "G", "bA", "A", "bB", "B",
 }
 
 //WordNumKeys 级数
 var WordNumKeys = map[string]string{
-	"C": "1", "#C": "1", "D": "2", "#D": "1", "E": "3", "F": "4", "#F": "1", "G": "5", "#G": "1", "A": "6", "#A": "1", "B": "7",
+	"C": "1", "bD": "b2", "D": "2", "bE": "b3", "E": "3", "F": "4", "bG": "b5", "G": "5", "bA": "b6", "A": "6", "bB": "b7", "B": "7",
 }
 
 //DefHideWordKeys 默认隐藏音名
 var DefHideWordKeys = map[string]struct{}{
-	"#C": {}, "#D": {}, "#F": {}, "#G": {}, "#A": {},
+	"bD": {}, "bE": {}, "bG": {}, "bA": {}, "bB": {},
 }
 
 type Words struct {

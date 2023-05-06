@@ -23,13 +23,15 @@ const (
 )
 
 const (
-	ModeSuper  Mode = 1 //超级模式,只会显示相同品格的音名
-	ModeNormal Mode = 2 //普通模式
+	ModeSuper   Mode = 1 //超级模式,只会显示相同品格的音名
+	ModeNormal  Mode = 2 //普通模式
+	ModeFreedom Mode = 3 //自由模式
 )
 
 type Game struct {
 	AllWords  map[WordPkId]*Words //所有音名信息
 	font      font.Face
+	smallFont font.Face
 	mode      Mode      //当前模式
 	wordStyle WordStyle //当前显示音名样式
 	touchFret int       //最近所点品格
@@ -48,8 +50,14 @@ func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
 		g.ChangeWordStyle()
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyV) {
-		g.ChangeMode()
+	if inpututil.IsKeyJustPressed(ebiten.Key1) {
+		g.ChangeMode(ModeNormal)
+	}
+	if inpututil.IsKeyJustPressed(ebiten.Key2) {
+		g.ChangeMode(ModeSuper)
+	}
+	if inpututil.IsKeyJustPressed(ebiten.Key3) {
+		g.ChangeMode(ModeFreedom)
 	}
 	return nil
 }
@@ -75,10 +83,13 @@ func (g *Game) DrawDesc(dst *ebiten.Image) {
 	if g.wordStyle == WordNum {
 		text.Draw(dst, "C Style-Number", g.font, 100, 400, color.White)
 	}
-	if g.mode == ModeSuper {
-		text.Draw(dst, "V Mode-Super", g.font, 700, 400, color.White)
-	} else {
-		text.Draw(dst, "V Mode-Normal", g.font, 700, 400, color.White)
+	switch g.mode {
+	case ModeNormal:
+		text.Draw(dst, "1 Mode-Normal", g.font, 700, 400, color.White)
+	case ModeSuper:
+		text.Draw(dst, "2 Mode-Super", g.font, 700, 400, color.White)
+	case ModeFreedom:
+		text.Draw(dst, "3 Mode-Free", g.font, 700, 400, color.White)
 	}
 	text.Draw(dst, "S Show/H Hide", g.font, 1300, 400, color.White)
 }
@@ -86,6 +97,12 @@ func (g *Game) DrawDesc(dst *ebiten.Image) {
 //DrawCircleFloor 画底板圆
 func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 	for _, words := range g.AllWords {
+		if g.mode != ModeFreedom {
+			if _, is := DefHideWordKeys[words.key]; is {
+				//非自由模式不显示
+				continue
+			}
+		}
 		ebitenutil.DrawCircle(dst, words.X, words.Y, width, color.RGBA{
 			R: 236,
 			G: 237,
@@ -101,12 +118,23 @@ func (g *Game) DrawWord(dst *ebiten.Image) {
 		if !words.IsShow {
 			continue
 		}
-		if g.wordStyle == WordKey {
-			text.Draw(dst, words.key, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
-		}
-		if g.wordStyle == WordNum {
-			num := WordNumKeys[words.key]
-			text.Draw(dst, num, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
+		//非自由模式不显示
+		if _, is := DefHideWordKeys[words.key]; is {
+			if g.wordStyle == WordKey {
+				text.Draw(dst, words.key, g.smallFont, int(words.X-width/2-7), int(words.Y+width/2+2), color.Black)
+			}
+			if g.wordStyle == WordNum {
+				num := WordNumKeys[words.key]
+				text.Draw(dst, num, g.smallFont, int(words.X-width/2-7), int(words.Y+width/2+2), color.Black)
+			}
+		} else {
+			if g.wordStyle == WordKey {
+				text.Draw(dst, words.key, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
+			}
+			if g.wordStyle == WordNum {
+				num := WordNumKeys[words.key]
+				text.Draw(dst, num, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
+			}
 		}
 	}
 }
@@ -117,6 +145,12 @@ func (g *Game) touchEventThink() {
 	for _, words := range g.AllWords {
 		if !words.In(float64(cX), float64(cY)) {
 			continue
+		}
+		if g.mode != ModeFreedom {
+			//非自由模式不显示
+			if _, is := DefHideWordKeys[words.key]; is {
+				continue
+			}
 		}
 		if g.mode == ModeSuper {
 			//超级模式
@@ -152,12 +186,9 @@ func (g *Game) ChangeWordStyle() {
 	}
 }
 
-func (g *Game) ChangeMode() {
-	if g.mode == ModeSuper {
-		g.mode = ModeNormal
-	} else {
-		g.mode = ModeSuper
-	}
+func (g *Game) ChangeMode(mode Mode) {
+	g.mode = mode
+	g.HideAll()
 }
 
 //initXYPos 音名坐标初始化
@@ -197,9 +228,9 @@ func (g *Game) initXYPos() {
 			y = float64(i/15*yCd + baseY + 18)
 			keyIndex = (i%15 + 5) % 12
 		}
-		if _, had := DefHideWordKeys[WordKeys[keyIndex]]; had {
-			continue
-		}
+		//if _, had := DefHideWordKeys[WordKeys[keyIndex]]; had {
+		//	continue
+		//}
 		insWord := InitWords(x, y, WordKeys[keyIndex], fret)
 		g.AllWords[insWord.PkId()] = insWord
 	}
@@ -213,7 +244,13 @@ func (g *Game) initFont() {
 		DPI:     dpi,
 		Hinting: font.HintingVertical,
 	})
+	smailFont, _ := opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    18,
+		DPI:     dpi,
+		Hinting: font.HintingVertical,
+	})
 	g.font = mplusNormalFont
+	g.smallFont = smailFont
 }
 
 func NewGame() *Game {
