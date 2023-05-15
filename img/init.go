@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-//go:embed demo2.png
+//go:embed bass.png
 var GuitarBoardImg []byte
 
 var EbitenGuitarBoardImg *ebiten.Image

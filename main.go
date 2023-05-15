@@ -9,8 +9,8 @@ import (
 
 func main() {
 	img.InitImg()
-	ebiten.SetWindowSize(800, 300)
-	ebiten.SetWindowTitle("GuitarBoard")
+	ebiten.SetWindowSize(900, 400)
+	ebiten.SetWindowTitle("BassBoard")
 	if err := ebiten.RunGame(game.NewGame()); err != nil {
 		log.Fatal(err)
 	}

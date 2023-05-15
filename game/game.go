@@ -29,12 +29,13 @@ const (
 )
 
 type Game struct {
-	AllWords  map[WordPkId]*Words //所有音名信息
-	font      font.Face
-	smallFont font.Face
-	mode      Mode      //当前模式
-	wordStyle WordStyle //当前显示音名样式
-	touchFret int       //最近所点品格
+	AllWords   map[WordPkId]*Words //所有音名信息
+	AllPinGeXY []*PinGe            //品格
+	font       font.Face
+	smallFont  font.Face
+	mode       Mode      //当前模式
+	wordStyle  WordStyle //当前显示音名样式
+	touchFret  int       //最近所点品格
 }
 
 func (g *Game) Update() error {
@@ -64,9 +65,10 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(150, 30)
+	op.GeoM.Translate(180, 30)
 	screen.DrawImage(img.EbitenGuitarBoardImg, op)
 	g.DrawCircleFloor(screen)
+	g.DrawPinGe(screen)
 	g.DrawDesc(screen)
 	g.DrawWord(screen)
 }
@@ -107,6 +109,18 @@ func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 			R: 236,
 			G: 237,
 			B: 237,
+			A: 230,
+		})
+	}
+}
+
+//DrawPinGe 画品格
+func (g *Game) DrawPinGe(dst *ebiten.Image) {
+	for _, pinGe := range g.AllPinGeXY {
+		ebitenutil.DrawCircle(dst, pinGe.X, pinGe.Y, pinGe.With, color.RGBA{
+			R: 95,
+			G: 153,
+			B: 92,
 			A: 255,
 		})
 	}
@@ -166,6 +180,12 @@ func (g *Game) touchEventThink() {
 //ShowAll 展示全部
 func (g *Game) ShowAll() {
 	for _, words := range g.AllWords {
+		if g.mode != ModeFreedom {
+			//非自由模式不显示
+			if _, is := DefHideWordKeys[words.key]; is {
+				continue
+			}
+		}
 		words.Show()
 	}
 }
@@ -191,12 +211,43 @@ func (g *Game) ChangeMode(mode Mode) {
 	g.HideAll()
 }
 
-//initXYPos 音名坐标初始化
+//initPinGe 初始化品格坐标
+func (g *Game) initPinGeXY() {
+	y := 250
+	x := 450
+	var widthF float64
+	g.AllPinGeXY = make([]*PinGe, 6)
+	for i := 0; i < 6; i++ {
+		widthF = widthPinGe
+		switch i {
+		case 0:
+			x = 450
+		case 1:
+			x = 613
+		case 2:
+			x = 789
+		case 3:
+			x = 965
+		case 4:
+			x = 1208
+			widthF = widthPinGeDouble
+		case 5:
+			x = 1475
+		}
+		g.AllPinGeXY[i] = &PinGe{
+			X:    float64(x),
+			Y:    float64(y),
+			With: widthF,
+		}
+	}
+}
+
+//initXYPos 初始化音阶坐标
 func (g *Game) initXYPos() {
 	xCd := 85     //间隔
 	yCd := 50     //间隔
-	baseX := 220  //坐标（0，0）距离
-	baseY := 35   //坐标（0，0）距离
+	baseX := 250  //坐标（0，0）距离
+	baseY := -67  //坐标（0，0）距离
 	keyIndex := 0 //取key的索引
 	var x, y float64
 	for i := 0; i < 15*6; i++ {
@@ -204,13 +255,9 @@ func (g *Game) initXYPos() {
 		fret := i%15 + 1 //品格
 		switch line {
 		case 0:
-			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 3)
-			keyIndex = (i%15 + 5) % 12
+			continue
 		case 1:
-			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 2)
-			keyIndex = (i % 15) % 12
+			continue
 		case 2:
 			x = float64(i%15*xCd + baseX)
 			y = float64(i/15*yCd + baseY + 5)
@@ -260,6 +307,7 @@ func NewGame() *Game {
 		wordStyle: WordNum,
 	}
 	res.initXYPos()
+	res.initPinGeXY()
 	res.initFont()
 	return res
 }
