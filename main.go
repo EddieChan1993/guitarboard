@@ -9,7 +9,7 @@ import (
 
 func main() {
 	img.InitImg()
-	ebiten.SetWindowSize(900, 400)
+	ebiten.SetWindowSize(1200, 400)
 	ebiten.SetWindowTitle("BassBoard")
 	if err := ebiten.RunGame(game.NewGame()); err != nil {
 		log.Fatal(err)
