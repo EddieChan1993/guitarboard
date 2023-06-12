@@ -14,6 +14,8 @@ import (
 
 const dpi = 72
 
+var width = float64(20) //基准值
+
 type Mode = uint8      //模式规则
 type WordStyle = uint8 //音名显示类型
 
@@ -110,6 +112,15 @@ func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 			//只画现实的音名
 			if !words.IsShow {
 				continue
+			}
+			if words.IsRoot() {
+				//外圈
+				ebitenutil.DrawCircle(dst, words.X, words.Y, width+6, color.RGBA{
+					R: 0,
+					G: 0,
+					B: 0,
+					A: 235,
+				})
 			}
 			ebitenutil.DrawCircle(dst, words.X, words.Y, width, color.RGBA{
 				R: 236,

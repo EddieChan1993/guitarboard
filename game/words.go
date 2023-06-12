@@ -4,7 +4,7 @@ import "fmt"
 
 type WordPkId = string
 
-var width = float64(20)
+var DefRootKey = "C" //默认根音
 
 //WordKeys 所有音名
 var WordKeys = []string{
@@ -30,10 +30,11 @@ type Words struct {
 
 func InitWords(x, y float64, key string, fret int) *Words {
 	works := &Words{
-		X:    x,
-		Y:    y,
-		key:  key,
-		Fret: fret,
+		X:      x,
+		Y:      y,
+		key:    key,
+		Fret:   fret,
+		IsShow: false,
 	}
 	works.Hide()
 	return works
@@ -56,6 +57,11 @@ func (this_ *Words) Hide() {
 //Show 显示音名
 func (this_ *Words) Show() {
 	this_.IsShow = true
+}
+
+//IsRoot 是否是根音
+func (this_ *Words) IsRoot() bool {
+	return DefRootKey == this_.key
 }
 
 //In 是否点到了音名图标
