@@ -35,6 +35,7 @@ type Game struct {
 	mode      Mode      //当前模式
 	wordStyle WordStyle //当前显示音名样式
 	touchFret int       //最近所点品格
+	limitFret int       //最多有效品格
 }
 
 func (g *Game) Update() error {
@@ -72,48 +73,75 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 1662, 400
+	return 1900, 400
 }
 
 //DrawDesc 描述文字
 func (g *Game) DrawDesc(dst *ebiten.Image) {
+	offset := 85
+	fontColor := color.RGBA{
+		R: 95,
+		G: 153,
+		B: 92,
+		A: 255,
+	}
 	if g.wordStyle == WordKey {
-		text.Draw(dst, "C Style-Word", g.font, 100, 400, color.White)
+		text.Draw(dst, "C Style-Word", g.font, 100+offset, 400, fontColor)
 	}
 	if g.wordStyle == WordNum {
-		text.Draw(dst, "C Style-Number", g.font, 100, 400, color.White)
+		text.Draw(dst, "C Style-Number", g.font, 100+offset, 400, fontColor)
 	}
 	switch g.mode {
 	case ModeNormal:
-		text.Draw(dst, "1 Mode-Normal", g.font, 700, 400, color.White)
+		text.Draw(dst, "123 Mode-Normal", g.font, 700+offset, 400, fontColor)
 	case ModeSuper:
-		text.Draw(dst, "2 Mode-Super", g.font, 700, 400, color.White)
+		text.Draw(dst, "123 Mode-Super", g.font, 700+offset, 400, fontColor)
 	case ModeFreedom:
-		text.Draw(dst, "3 Mode-Free", g.font, 700, 400, color.White)
+		text.Draw(dst, "123 Mode-Free", g.font, 700+offset, 400, fontColor)
 	}
-	text.Draw(dst, "S Show/H Hide", g.font, 1300, 400, color.White)
+	text.Draw(dst, "S Show/H Hide", g.font, 1300+offset, 400, fontColor)
 }
 
 //DrawCircleFloor 画底板圆
 func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
-	for _, words := range g.AllWords {
-		if g.mode != ModeFreedom {
-			if _, is := DefHideWordKeys[words.key]; is {
-				//非自由模式不显示
+	if g.mode == ModeFreedom {
+		//自由模式
+		for _, words := range g.AllWords {
+			//只画现实的音名
+			if !words.IsShow {
 				continue
 			}
+			ebitenutil.DrawCircle(dst, words.X, words.Y, width, color.RGBA{
+				R: 236,
+				G: 237,
+				B: 237,
+				A: 244,
+			})
 		}
-		ebitenutil.DrawCircle(dst, words.X, words.Y, width, color.RGBA{
-			R: 236,
-			G: 237,
-			B: 237,
-			A: 255,
-		})
+	} else {
+		for _, words := range g.AllWords {
+			//不显示半音
+			if _, is := DefHideWordKeys[words.key]; is {
+				continue
+			}
+			ebitenutil.DrawCircle(dst, words.X, words.Y, width, color.RGBA{
+				R: 236,
+				G: 237,
+				B: 237,
+				A: 244,
+			})
+		}
 	}
 }
 
 //DrawWord 画音名
 func (g *Game) DrawWord(dst *ebiten.Image) {
+	fontColor := color.RGBA{
+		R: 0,
+		G: 0,
+		B: 0,
+		A: 255,
+	}
 	for _, words := range g.AllWords {
 		if !words.IsShow {
 			continue
@@ -121,19 +149,19 @@ func (g *Game) DrawWord(dst *ebiten.Image) {
 		//非自由模式不显示
 		if _, is := DefHideWordKeys[words.key]; is {
 			if g.wordStyle == WordKey {
-				text.Draw(dst, words.key, g.smallFont, int(words.X-width/2-7), int(words.Y+width/2+2), color.Black)
+				text.Draw(dst, words.key, g.smallFont, int(words.X-width/2-7), int(words.Y+width/2+2), fontColor)
 			}
 			if g.wordStyle == WordNum {
 				num := WordNumKeys[words.key]
-				text.Draw(dst, num, g.smallFont, int(words.X-width/2-7), int(words.Y+width/2+2), color.Black)
+				text.Draw(dst, num, g.smallFont, int(words.X-width/2-7), int(words.Y+width/2+2), fontColor)
 			}
 		} else {
 			if g.wordStyle == WordKey {
-				text.Draw(dst, words.key, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
+				text.Draw(dst, words.key, g.font, int(words.X-width/2), int(words.Y+width/2+5), fontColor)
 			}
 			if g.wordStyle == WordNum {
 				num := WordNumKeys[words.key]
-				text.Draw(dst, num, g.font, int(words.X-width/2), int(words.Y+width/2+5), color.Black)
+				text.Draw(dst, num, g.font, int(words.X-width/2), int(words.Y+width/2+5), fontColor)
 			}
 		}
 	}
@@ -158,7 +186,7 @@ func (g *Game) touchEventThink() {
 				g.HideAll()
 			}
 		}
-		words.Show()
+		words.Trigger()
 		g.touchFret = words.Fret
 	}
 }
@@ -166,6 +194,12 @@ func (g *Game) touchEventThink() {
 //ShowAll 展示全部
 func (g *Game) ShowAll() {
 	for _, words := range g.AllWords {
+		if g.mode != ModeFreedom {
+			//非自由模式不显示
+			if _, is := DefHideWordKeys[words.key]; is {
+				continue
+			}
+		}
 		words.Show()
 	}
 }
@@ -198,35 +232,36 @@ func (g *Game) initXYPos() {
 	baseX := 220  //坐标（0，0）距离
 	baseY := 35   //坐标（0，0）距离
 	keyIndex := 0 //取key的索引
+	maxFret := g.limitFret
 	var x, y float64
-	for i := 0; i < 15*6; i++ {
-		line := i / 15   //第几行
-		fret := i%15 + 1 //品格
+	for i := 0; i < maxFret*6; i++ {
+		line := i / maxFret   //第几行
+		fret := i%maxFret + 1 //品格
 		switch line {
 		case 0:
-			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 3)
-			keyIndex = (i%15 + 5) % 12
+			x = float64(i%maxFret*xCd + baseX)
+			y = float64(i/maxFret*yCd + baseY + 3)
+			keyIndex = (i%maxFret + 5) % 12
 		case 1:
-			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 2)
-			keyIndex = (i % 15) % 12
+			x = float64(i%maxFret*xCd + baseX)
+			y = float64(i/maxFret*yCd + baseY + 2)
+			keyIndex = (i % maxFret) % 12
 		case 2:
-			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 5)
-			keyIndex = (i%15 + 8) % 12
+			x = float64(i%maxFret*xCd + baseX)
+			y = float64(i/maxFret*yCd + baseY + 5)
+			keyIndex = (i%maxFret + 8) % 12
 		case 3:
-			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 9)
-			keyIndex = (i%15 + 3) % 12
+			x = float64(i%maxFret*xCd + baseX)
+			y = float64(i/maxFret*yCd + baseY + 9)
+			keyIndex = (i%maxFret + 3) % 12
 		case 4:
-			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 12)
-			keyIndex = (i%15 + 10) % 12
+			x = float64(i%maxFret*xCd + baseX)
+			y = float64(i/maxFret*yCd + baseY + 12)
+			keyIndex = (i%maxFret + 10) % 12
 		case 5:
-			x = float64(i%15*xCd + baseX)
-			y = float64(i/15*yCd + baseY + 18)
-			keyIndex = (i%15 + 5) % 12
+			x = float64(i%maxFret*xCd + baseX)
+			y = float64(i/maxFret*yCd + baseY + 18)
+			keyIndex = (i%maxFret + 5) % 12
 		}
 		//if _, had := DefHideWordKeys[WordKeys[keyIndex]]; had {
 		//	continue
@@ -258,6 +293,7 @@ func NewGame() *Game {
 		AllWords:  make(map[WordPkId]*Words),
 		mode:      ModeSuper,
 		wordStyle: WordNum,
+		limitFret: 18,
 	}
 	res.initXYPos()
 	res.initFont()
