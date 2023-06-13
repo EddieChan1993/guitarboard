@@ -4,7 +4,7 @@ import "fmt"
 
 type WordPkId = string
 
-var DefRootKey = "C" //默认根音
+const DefRootKey = "C" //默认根音
 
 //WordKeys 所有音名
 var WordKeys = []string{
@@ -57,11 +57,6 @@ func (this_ *Words) Hide() {
 //Show 显示音名
 func (this_ *Words) Show() {
 	this_.IsShow = true
-}
-
-//IsRoot 是否是根音
-func (this_ *Words) IsRoot() bool {
-	return DefRootKey == this_.key
 }
 
 //In 是否点到了音名图标

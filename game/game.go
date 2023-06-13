@@ -38,6 +38,7 @@ type Game struct {
 	wordStyle WordStyle //当前显示音名样式
 	touchFret int       //最近所点品格
 	limitFret int       //最多有效品格
+	defRoot   string    //根音
 }
 
 func (g *Game) Update() error {
@@ -113,7 +114,7 @@ func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 			if !words.IsShow {
 				continue
 			}
-			if words.IsRoot() {
+			if g.IsRoot(words.key) {
 				//外圈
 				ebitenutil.DrawCircle(dst, words.X, words.Y, width+6, color.RGBA{
 					R: 0,
@@ -191,15 +192,39 @@ func (g *Game) touchEventThink() {
 				continue
 			}
 		}
-		if g.mode == ModeSuper {
+		if g.mode == ModeFreedom {
+			//自由模式
+			if g.isPressMoreKey([]ebiten.Key{ebiten.KeyControlLeft}) {
+				//主音切换
+				g.defRoot = words.key
+				return
+			}
+		} else if g.mode == ModeSuper {
 			//超级模式
+			//只保留一个品格显示
 			if g.touchFret != words.Fret {
 				g.HideAll()
 			}
+			g.touchFret = words.Fret
 		}
 		words.Trigger()
-		g.touchFret = words.Fret
 	}
+}
+
+//isPressMoreKey 是否按了该键
+func (g *Game) isPressMoreKey(needKeys []ebiten.Key) bool {
+	nows := inpututil.PressedKeys()
+	if len(needKeys) == 0 || len(nows) == 0 {
+		return false
+	}
+	for _, now := range nows {
+		for _, need := range needKeys {
+			if now == need {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 //ShowAll 展示全部
@@ -299,12 +324,18 @@ func (g *Game) initFont() {
 	g.smallFont = smailFont
 }
 
+//IsRoot 是否是根音
+func (g *Game) IsRoot(key string) bool {
+	return g.defRoot == key
+}
+
 func NewGame() *Game {
 	res := &Game{
 		AllWords:  make(map[WordPkId]*Words),
 		mode:      ModeSuper,
 		wordStyle: WordNum,
 		limitFret: 18,
+		defRoot:   DefRootKey,
 	}
 	res.initXYPos()
 	res.initFont()
