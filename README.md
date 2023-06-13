@@ -10,6 +10,9 @@ C -音名和唱名切换
 ## 显示切换
 S -显示
 H -隐藏
+## 自由模式下标记主音
+control+ 鼠标点击任意音名
+标记主音
 ## 演示
 ![屏幕录制2023-03-03 10 22 46](https://user-images.githubusercontent.com/21115695/222617116-3c639f4b-9f05-4e4b-80ca-0cef06c8eee7.gif)
 
