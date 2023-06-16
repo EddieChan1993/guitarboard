@@ -1,7 +1,5 @@
 package game
 
-import "fmt"
-
 type Scale12Typ = string            //12个基本音阶
 type ScaleNaturalTyp = []Scale12Typ //自然音阶
 const ScaleNatureLen = 8            //自然大调总数
@@ -70,9 +68,6 @@ func (s *ScaleSysT) ScaleNumsByRoot(root string) (res map[string]string, hide ma
 			hide[typ] = struct{}{}
 		}
 	}
-	fmt.Println(major)
-	fmt.Println(all)
-	fmt.Println(hide)
 	return res, hide
 }
 
