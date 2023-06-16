@@ -10,6 +10,7 @@ import (
 	"golang.org/x/image/font/opentype"
 	"guitarboard/img"
 	"image/color"
+	"strings"
 )
 
 const dpi = 72
@@ -138,6 +139,15 @@ func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 			if _, is := g.DefHideWordKeys[words.key]; is {
 				continue
 			}
+			if g.IsRoot(words.key) {
+				//外圈
+				ebitenutil.DrawCircle(dst, words.X, words.Y, width+6, color.RGBA{
+					R: 0,
+					G: 0,
+					B: 0,
+					A: 235,
+				})
+			}
 			ebitenutil.DrawCircle(dst, words.X, words.Y, width, color.RGBA{
 				R: 236,
 				G: 237,
@@ -161,22 +171,21 @@ func (g *Game) DrawWord(dst *ebiten.Image) {
 			continue
 		}
 		//非自由模式不显示
-		if _, is := g.DefHideWordKeys[words.key]; is {
-			if g.wordStyle == WordKey {
-				text.Draw(dst, words.key, g.smallFont, int(words.X-width/2-7), int(words.Y+width/2+2), fontColor)
+		showKey := words.key
+		if g.wordStyle == WordNum {
+			showKey = g.WordNumKeys[words.key]
+		}
+		if g.mode != ModeFreedom {
+			//非自由模式不显示
+			if _, is := g.DefHideWordKeys[words.key]; is {
+				continue
 			}
-			if g.wordStyle == WordNum {
-				num := g.WordNumKeys[words.key]
-				text.Draw(dst, num, g.smallFont, int(words.X-width/2-7), int(words.Y+width/2+2), fontColor)
-			}
+		}
+		if strings.Contains(showKey, "b") {
+			//如果有降b，就缩小显示
+			text.Draw(dst, showKey, g.smallFont, int(words.X-width/2-7), int(words.Y+width/2+2), fontColor)
 		} else {
-			if g.wordStyle == WordKey {
-				text.Draw(dst, words.key, g.font, int(words.X-width/2), int(words.Y+width/2+5), fontColor)
-			}
-			if g.wordStyle == WordNum {
-				num := g.WordNumKeys[words.key]
-				text.Draw(dst, num, g.font, int(words.X-width/2), int(words.Y+width/2+5), fontColor)
-			}
+			text.Draw(dst, showKey, g.font, int(words.X-width/2), int(words.Y+width/2+5), fontColor)
 		}
 	}
 }
@@ -188,20 +197,18 @@ func (g *Game) touchEventThink() {
 		if !words.In(float64(cX), float64(cY)) {
 			continue
 		}
+		//主音切换
+		if g.isPressMoreKey([]ebiten.Key{ebiten.KeyControlLeft}) {
+			g.setRoot(words.key)
+			return
+		}
 		if g.mode != ModeFreedom {
 			//非自由模式不显示
 			if _, is := g.DefHideWordKeys[words.key]; is {
 				continue
 			}
 		}
-		if g.mode == ModeFreedom {
-			//自由模式
-			if g.isPressMoreKey([]ebiten.Key{ebiten.KeyControlLeft}) {
-				//主音切换
-				g.setRoot(words.key)
-				return
-			}
-		} else if g.mode == ModeSuper {
+		if g.mode == ModeSuper {
 			//超级模式
 			//只保留一个品格显示
 			if g.touchFret != words.Fret {
@@ -217,6 +224,8 @@ func (g *Game) touchEventThink() {
 func (g *Game) setRoot(root string) {
 	g.WordNumKeys, g.DefHideWordKeys = ScaleSys.ScaleNumsByRoot(root)
 	g.defRoot = root
+	g.HideAll()
+	g.ShowAll()
 }
 
 //isPressMoreKey 是否按了该键
