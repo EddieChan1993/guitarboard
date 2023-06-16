@@ -54,7 +54,7 @@ func (this_ *Words) In(currentX, currentY float64) bool {
 	wordX := this_.X + width
 	wordY := this_.Y + width
 
-	if !(currentX >= this_.X-width && currentX <= wordX) {
+	if !(currentX >= this_.X-width-22 && currentX <= wordX) {
 		return false
 	}
 	if !(currentY >= this_.Y-width && currentY <= wordY) {
