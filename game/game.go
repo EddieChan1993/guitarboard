@@ -118,7 +118,7 @@ func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 				continue
 			}
 			if g.IsRoot(words.key) {
-				//外圈
+				//根音显示外圈
 				ebitenutil.DrawCircle(dst, words.X, words.Y, width+6, color.RGBA{
 					R: 0,
 					G: 0,
@@ -140,7 +140,7 @@ func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 				continue
 			}
 			if g.IsRoot(words.key) {
-				//外圈
+				//根音显示外圈
 				ebitenutil.DrawCircle(dst, words.X, words.Y, width+6, color.RGBA{
 					R: 0,
 					G: 0,
@@ -176,7 +176,7 @@ func (g *Game) DrawWord(dst *ebiten.Image) {
 			showKey = g.WordNumKeys[words.key]
 		}
 		if g.mode != ModeFreedom {
-			//非自由模式不显示
+			//非自由模式，不显示非组成音
 			if _, is := g.DefHideWordKeys[words.key]; is {
 				continue
 			}
@@ -203,7 +203,7 @@ func (g *Game) touchEventThink() {
 			return
 		}
 		if g.mode != ModeFreedom {
-			//非自由模式不显示
+			//非自由模式，无法点击非组成音
 			if _, is := g.DefHideWordKeys[words.key]; is {
 				continue
 			}
@@ -224,8 +224,7 @@ func (g *Game) touchEventThink() {
 func (g *Game) setRoot(root string) {
 	g.WordNumKeys, g.DefHideWordKeys = ScaleSys.ScaleNumsByRoot(root)
 	g.defRoot = root
-	g.HideAll()
-	g.ShowAll()
+	g.ShowAll() //全部显示
 }
 
 //isPressMoreKey 是否按了该键
@@ -275,7 +274,7 @@ func (g *Game) ChangeWordStyle() {
 
 func (g *Game) ChangeMode(mode Mode) {
 	g.mode = mode
-	g.HideAll()
+	g.ShowAll()
 }
 
 //initXYPos 音名坐标初始化
@@ -351,8 +350,8 @@ func NewGame() *Game {
 	wordNumKeys, defHideWordKeys := ScaleSys.ScaleNumsByRoot(DefRootKey)
 	res := &Game{
 		AllWords:        make(map[WordPkId]*Words),
-		mode:            ModeSuper,
-		wordStyle:       WordNum,
+		mode:            ModeFreedom,
+		wordStyle:       WordKey,
 		limitFret:       18,
 		defRoot:         DefRootKey,
 		WordNumKeys:     wordNumKeys,
@@ -360,5 +359,6 @@ func NewGame() *Game {
 	}
 	res.initXYPos()
 	res.initFont()
+	res.ChangeMode(ModeFreedom)
 	return res
 }
