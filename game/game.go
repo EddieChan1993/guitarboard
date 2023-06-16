@@ -31,14 +31,16 @@ const (
 )
 
 type Game struct {
-	AllWords  map[WordPkId]*Words //所有音名信息
-	font      font.Face
-	smallFont font.Face
-	mode      Mode      //当前模式
-	wordStyle WordStyle //当前显示音名样式
-	touchFret int       //最近所点品格
-	limitFret int       //最多有效品格
-	defRoot   string    //根音
+	AllWords        map[WordPkId]*Words //所有音名信息
+	font            font.Face
+	smallFont       font.Face
+	mode            Mode                //当前模式
+	wordStyle       WordStyle           //当前显示音名样式
+	touchFret       int                 //最近所点品格
+	limitFret       int                 //最多有效品格
+	defRoot         string              //根音
+	WordNumKeys     map[string]string   //音名和音级的关系
+	DefHideWordKeys map[string]struct{} //非大调组成音
 }
 
 func (g *Game) Update() error {
@@ -133,7 +135,7 @@ func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 	} else {
 		for _, words := range g.AllWords {
 			//不显示半音
-			if _, is := DefHideWordKeys[words.key]; is {
+			if _, is := g.DefHideWordKeys[words.key]; is {
 				continue
 			}
 			ebitenutil.DrawCircle(dst, words.X, words.Y, width, color.RGBA{
@@ -159,12 +161,12 @@ func (g *Game) DrawWord(dst *ebiten.Image) {
 			continue
 		}
 		//非自由模式不显示
-		if _, is := DefHideWordKeys[words.key]; is {
+		if _, is := g.DefHideWordKeys[words.key]; is {
 			if g.wordStyle == WordKey {
 				text.Draw(dst, words.key, g.smallFont, int(words.X-width/2-7), int(words.Y+width/2+2), fontColor)
 			}
 			if g.wordStyle == WordNum {
-				num := WordNumKeys[words.key]
+				num := g.WordNumKeys[words.key]
 				text.Draw(dst, num, g.smallFont, int(words.X-width/2-7), int(words.Y+width/2+2), fontColor)
 			}
 		} else {
@@ -172,7 +174,7 @@ func (g *Game) DrawWord(dst *ebiten.Image) {
 				text.Draw(dst, words.key, g.font, int(words.X-width/2), int(words.Y+width/2+5), fontColor)
 			}
 			if g.wordStyle == WordNum {
-				num := WordNumKeys[words.key]
+				num := g.WordNumKeys[words.key]
 				text.Draw(dst, num, g.font, int(words.X-width/2), int(words.Y+width/2+5), fontColor)
 			}
 		}
@@ -188,7 +190,7 @@ func (g *Game) touchEventThink() {
 		}
 		if g.mode != ModeFreedom {
 			//非自由模式不显示
-			if _, is := DefHideWordKeys[words.key]; is {
+			if _, is := g.DefHideWordKeys[words.key]; is {
 				continue
 			}
 		}
@@ -196,7 +198,7 @@ func (g *Game) touchEventThink() {
 			//自由模式
 			if g.isPressMoreKey([]ebiten.Key{ebiten.KeyControlLeft}) {
 				//主音切换
-				g.defRoot = words.key
+				g.setRoot(words.key)
 				return
 			}
 		} else if g.mode == ModeSuper {
@@ -209,6 +211,12 @@ func (g *Game) touchEventThink() {
 		}
 		words.Trigger()
 	}
+}
+
+//setRoot 设置主音
+func (g *Game) setRoot(root string) {
+	g.WordNumKeys, g.DefHideWordKeys = ScaleSys.ScaleNumsByRoot(root)
+	g.defRoot = root
 }
 
 //isPressMoreKey 是否按了该键
@@ -232,7 +240,7 @@ func (g *Game) ShowAll() {
 	for _, words := range g.AllWords {
 		if g.mode != ModeFreedom {
 			//非自由模式不显示
-			if _, is := DefHideWordKeys[words.key]; is {
+			if _, is := g.DefHideWordKeys[words.key]; is {
 				continue
 			}
 		}
@@ -330,12 +338,16 @@ func (g *Game) IsRoot(key string) bool {
 }
 
 func NewGame() *Game {
+	initScale()
+	wordNumKeys, defHideWordKeys := ScaleSys.ScaleNumsByRoot(DefRootKey)
 	res := &Game{
-		AllWords:  make(map[WordPkId]*Words),
-		mode:      ModeSuper,
-		wordStyle: WordNum,
-		limitFret: 18,
-		defRoot:   DefRootKey,
+		AllWords:        make(map[WordPkId]*Words),
+		mode:            ModeSuper,
+		wordStyle:       WordNum,
+		limitFret:       18,
+		defRoot:         DefRootKey,
+		WordNumKeys:     wordNumKeys,
+		DefHideWordKeys: defHideWordKeys,
 	}
 	res.initXYPos()
 	res.initFont()

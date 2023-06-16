@@ -7,19 +7,7 @@ type WordPkId = string
 const DefRootKey = "C" //默认根音
 
 //WordKeys 所有音名
-var WordKeys = []string{
-	"C", "bD", "D", "bE", "E", "F", "bG", "G", "bA", "A", "bB", "B",
-}
-
-//WordNumKeys 级数，C大调
-var WordNumKeys = map[string]string{
-	"C": "1", "bD": "b2", "D": "2", "bE": "b3", "E": "3", "F": "4", "bG": "b5", "G": "5", "bA": "b6", "A": "6", "bB": "b7", "B": "7",
-}
-
-//DefHideWordKeys 默认隐藏半音
-var DefHideWordKeys = map[string]struct{}{
-	"bD": {}, "bE": {}, "bG": {}, "bA": {}, "bB": {},
-}
+var WordKeys = scale12
 
 type Words struct {
 	X, Y   float64
