@@ -106,7 +106,7 @@ func (g *Game) DrawDesc(dst *ebiten.Image) {
 		text.Draw(dst, "123 Mode-Free", g.font, 700+offset, 400, fontColor)
 	}
 	text.Draw(dst, "S Show/H Hide", g.font, 1300+offset, 400, fontColor)
-	text.Draw(dst, "R "+g.defRoot, g.font, 90, 80, fontColor)
+	text.Draw(dst, g.defRoot, g.font, 70, 80, fontColor)
 }
 
 //DrawCircleFloor 画底板圆
