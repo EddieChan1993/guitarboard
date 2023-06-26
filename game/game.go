@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
@@ -26,9 +27,10 @@ const (
 )
 
 const (
-	ModeSuper   Mode = 1 //超级模式,只会显示相同品格的音名
-	ModeNormal  Mode = 2 //普通模式
-	ModeFreedom Mode = 3 //自由模式
+	ModeSuper      Mode = 1 //超级模式,只会显示相同品格的音名
+	ModeNormal     Mode = 2 //普通模式
+	ModeFreedom    Mode = 3 //自由模式
+	ModePentatonic Mode = 4 //五声音阶
 )
 
 type Game struct {
@@ -66,6 +68,9 @@ func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.Key3) {
 		g.ChangeMode(ModeFreedom)
 	}
+	if inpututil.IsKeyJustPressed(ebiten.Key4) {
+		g.ChangeMode(ModePentatonic)
+	}
 	return nil
 }
 
@@ -99,11 +104,13 @@ func (g *Game) DrawDesc(dst *ebiten.Image) {
 	}
 	switch g.mode {
 	case ModeNormal:
-		text.Draw(dst, "123 Mode-Normal", g.font, 700+offset, 400, fontColor)
+		text.Draw(dst, fmt.Sprintf("%d Mode-Normal", ModeNormal), g.font, 700+offset, 400, fontColor)
 	case ModeSuper:
-		text.Draw(dst, "123 Mode-Super", g.font, 700+offset, 400, fontColor)
+		text.Draw(dst, fmt.Sprintf("%d Mode-Super", ModeSuper), g.font, 700+offset, 400, fontColor)
 	case ModeFreedom:
-		text.Draw(dst, "123 Mode-Free", g.font, 700+offset, 400, fontColor)
+		text.Draw(dst, fmt.Sprintf("%d Mode-Free", ModeFreedom), g.font, 700+offset, 400, fontColor)
+	case ModePentatonic:
+		text.Draw(dst, fmt.Sprintf("%d Mode-Pentatonic", ModePentatonic), g.font, 700+offset, 400, fontColor)
 	}
 	text.Draw(dst, "S Show/H Hide", g.font, 1300+offset, 400, fontColor)
 	text.Draw(dst, g.defRoot, g.font, 70, 80, fontColor)
@@ -138,6 +145,10 @@ func (g *Game) DrawCircleFloor(dst *ebiten.Image) {
 		for _, words := range g.AllWords {
 			//不显示半音
 			if _, is := g.DefHideWordKeys[words.key]; is {
+				continue
+			}
+			if g.mode == ModePentatonic && !g.IsPentatonic(words.key) {
+				//五声音阶模式
 				continue
 			}
 			if g.IsRoot(words.key) {
@@ -181,6 +192,10 @@ func (g *Game) DrawWord(dst *ebiten.Image) {
 			if _, is := g.DefHideWordKeys[words.key]; is {
 				continue
 			}
+		}
+		if g.mode == ModePentatonic && !g.IsPentatonic(words.key) {
+			//五声音阶模式
+			continue
 		}
 		if strings.Contains(showKey, "b") {
 			//如果有降b，就缩小显示
@@ -344,6 +359,12 @@ func (g *Game) initFont() {
 //IsRoot 是否是根音
 func (g *Game) IsRoot(key string) bool {
 	return g.defRoot == key
+}
+
+//IsPentatonic 是否是五声音阶
+func (g *Game) IsPentatonic(word string) bool {
+	nums := g.WordNumKeys[word]
+	return nums != "4" && nums != "7"
 }
 
 func NewGame() *Game {
