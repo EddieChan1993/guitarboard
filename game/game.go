@@ -27,8 +27,8 @@ const (
 )
 
 const (
-	ModeSuper      Mode = 1 //超级模式,只会显示相同品格的音名
-	ModeNormal     Mode = 2 //普通模式
+	ModeNormal     Mode = 1 //普通模式
+	ModeSuper      Mode = 2 //超级模式, 只会显示相同品格的音名
 	ModeFreedom    Mode = 3 //自由模式
 	ModePentatonic Mode = 4 //五声音阶
 )
